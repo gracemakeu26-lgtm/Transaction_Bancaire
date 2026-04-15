@@ -4,7 +4,11 @@ from sqlalchemy import inspect, text
 from api.utilisateurs import utilisateurs_ns
 from ressources import utilisateurs_ns as utilisateurs_rest_ns
 from schemas import ma
+from dotenv import load_dotenv
 import os
+
+
+load_dotenv()
 
 def create_app():
     app = Flask(__name__)
@@ -64,6 +68,8 @@ app = create_app()
 def home():
     return {"message": "Bienvenue sur l'API de Gestion des Transactions Bancaires", "docs": "/docs"}, 200
 
+
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT'))
+    print(f"Démarrage de l'application sur le port {port}...")
     app.run(debug=True, host='0.0.0.0', port=port)
