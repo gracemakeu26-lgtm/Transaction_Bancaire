@@ -6,3 +6,5 @@ python-dotenv==1.0.0
 Flask-restful
 Flask-marshmallow
 marshmallow-SQLAlchemy
+psycopg2-binary==2.9.9
+gunicorn==21.2.0
