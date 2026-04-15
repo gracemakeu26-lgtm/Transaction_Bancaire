@@ -14,13 +14,16 @@ def create_app():
 
     if database_url:
         # 🔧 Nécessaire pour Neon : remplace "postgres://" par "postgresql://"
+        print("Configuration de la base de données à partir de DATABASE_URL")
         if database_url.startswith("postgres://"):
             database_url = database_url.replace("postgres://", "postgresql://", 1)
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     else:
-        # Fallback en local (SQLite)
-        basedir = os.path.abspath(os.path.dirname(__file__))
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database.db')
+        pass
+        # # Fallback en local (SQLite)
+        # print("Aucune DATABASE_URL trouvée, utilisation de SQLite en local")
+        # basedir = os.path.abspath(os.path.dirname(__file__))
+        # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database.db')
     
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')

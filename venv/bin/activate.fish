@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV /home/grace/L3/S2/INF352/Transaction_Bancaire/venv
+set -gx VIRTUAL_ENV /home/grace/L3/S2/INF352/bank-api/venv
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH
