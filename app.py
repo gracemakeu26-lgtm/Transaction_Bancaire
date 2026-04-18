@@ -57,10 +57,15 @@ def create_app():
 def _ensure_face_column_exists():
     inspector = inspect(db.engine)
     if 'utilisateurs' in inspector.get_table_names():
-        columns = [col['name'] for col in inspector.get_columns('utilisateurs')]
+        columns = {col['name'] for col in inspector.get_columns('utilisateurs')}
+        missing_columns = []
         if 'empreinte_faciale' not in columns:
+            missing_columns.append("ALTER TABLE utilisateurs ADD COLUMN empreinte_faciale TEXT")
+        if 'is_admin' not in columns:
+            missing_columns.append("ALTER TABLE utilisateurs ADD COLUMN is_admin BOOLEAN DEFAULT FALSE")
+        for sql in missing_columns:
             with db.engine.begin() as conn:
-                conn.execute(text('ALTER TABLE utilisateurs ADD COLUMN empreinte_faciale TEXT'))
+                conn.execute(text(sql))
 
 app = create_app()
 

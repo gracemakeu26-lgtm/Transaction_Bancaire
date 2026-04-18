@@ -5,6 +5,20 @@ from datetime import datetime
 import re
 import random
 
+def auth_user(email, mot_de_passe):
+    if not email or not mot_de_passe:
+        utilisateurs_ns.abort(400, "Email et mot de passe requis")
+    utilisateur = Utilisateur.query.filter_by(email=email).first()
+    if not utilisateur or utilisateur.mot_de_passe != mot_de_passe:
+        utilisateurs_ns.abort(401, "Informations invalides")
+    return utilisateur
+
+def require_admin(email, mot_de_passe):
+    utilisateur = auth_user(email, mot_de_passe)
+    if not utilisateur.is_admin:
+        utilisateurs_ns.abort(403, "Accès administrateur requis")
+    return utilisateur
+
 # Définition du namespace
 utilisateurs_ns = Namespace('utilisateurs', description='Gestion des utilisateurs bancaires')
 
@@ -21,6 +35,7 @@ utilisateur_model = utilisateurs_ns.model('Utilisateur', {
     'type_compte': fields.String(required=True, description='Type de compte', enum=['courant', 'epargne', 'joint']),
     'solde_initial': fields.Float(required=True, description='Solde initial du compte'),
     'numero_compte': fields.String(readonly=True, description='Numéro de compte généré automatiquement'),
+    'is_admin': fields.Boolean(description='Utilisateur administrateur'),
     'date_creation': fields.DateTime(readonly=True, description='Date de création du compte'),
     'statut': fields.String(description='Statut du compte', enum=['actif', 'inactif', 'bloque'], default='actif')
 })
@@ -36,6 +51,17 @@ utilisateur_input_model = utilisateurs_ns.model('UtilisateurInput', {
     'type_compte': fields.String(required=True, enum=['courant', 'epargne', 'joint']),
     'solde_initial': fields.Float(required=True),
     'statut': fields.String(enum=['actif', 'inactif', 'bloque'], default='actif')
+})
+
+admin_action_model = utilisateurs_ns.model('AdminAction', {
+    'admin_email': fields.String(required=True, description='Email de l’administrateur'),
+    'admin_mot_de_passe': fields.String(required=True, description='Mot de passe de l’administrateur')
+})
+
+transaction_model = utilisateurs_ns.model('CompteTransaction', {
+    'email': fields.String(required=True, description='Email du titulaire du compte ou de l’administrateur'),
+    'mot_de_passe': fields.String(required=True, description='Mot de passe du titulaire ou de l’administrateur'),
+    'montant': fields.Float(required=True, description='Montant du dépôt ou retrait')
 })
 
 # Fonctions utilitaires
@@ -96,6 +122,7 @@ class UtilisateurList(Resource):
             type_compte=data['type_compte'],
             numero_compte=generer_numero_compte(),
             solde_initial=data['solde_initial'],
+            is_admin=False,
             statut=data.get('statut', 'actif')
         )
         
@@ -142,7 +169,84 @@ class UtilisateurItem(Resource):
     def delete(self, id):
         """Supprime un utilisateur (soft delete ou hard delete selon les règles métier)"""
         utilisateur = Utilisateur.query.get_or_404(id)
-        # Dans un vrai système bancaire, on ferait un soft delete (statut = 'ferme')
+        data = request.get_json(silent=True)
+        if not data or not isinstance(data, dict):
+            utilisateurs_ns.abort(400, "Le corps de la requête doit être un JSON valide")
+        admin_email = data.get('admin_email')
+        admin_mot_de_passe = data.get('admin_mot_de_passe')
+        requester = auth_user(admin_email, admin_mot_de_passe)
+        if not requester.is_admin:
+            utilisateurs_ns.abort(403, "Accès administrateur requis")
+        if utilisateur.is_admin:
+            utilisateurs_ns.abort(403, "Impossible de supprimer un autre administrateur")
+
         db.session.delete(utilisateur)
         db.session.commit()
         return '', 204
+
+@utilisateurs_ns.route('/<int:id>/deposit')
+class UtilisateurDeposit(Resource):
+    @utilisateurs_ns.doc('deposit_utilisateur')
+    @utilisateurs_ns.expect(transaction_model, validate=True)
+    def post(self, id):
+        """Dépose un montant sur le compte d'un utilisateur"""
+        utilisateur = Utilisateur.query.get_or_404(id)
+        data = request.get_json(silent=True)
+        if not data or not isinstance(data, dict):
+            utilisateurs_ns.abort(400, "Le corps de la requête doit être un JSON valide")
+        auth_email = data.get('email')
+        auth_password = data.get('mot_de_passe')
+        montant = data.get('montant')
+        if montant is None or montant <= 0:
+            utilisateurs_ns.abort(400, "Le montant doit être un nombre positif")
+        auteur = auth_user(auth_email, auth_password)
+        if auteur.id != utilisateur.id and not auteur.is_admin:
+            utilisateurs_ns.abort(403, "Accès refusé")
+        try:
+            utilisateur.deposit(montant)
+        except ValueError as exc:
+            utilisateurs_ns.abort(400, str(exc))
+        db.session.commit()
+        return utilisateur.to_dict(), 200
+
+@utilisateurs_ns.route('/<int:id>/withdraw')
+class UtilisateurWithdraw(Resource):
+    @utilisateurs_ns.doc('withdraw_utilisateur')
+    @utilisateurs_ns.expect(transaction_model, validate=True)
+    def post(self, id):
+        """Retire un montant du compte d'un utilisateur"""
+        utilisateur = Utilisateur.query.get_or_404(id)
+        data = request.get_json(silent=True)
+        if not data or not isinstance(data, dict):
+            utilisateurs_ns.abort(400, "Le corps de la requête doit être un JSON valide")
+        auth_email = data.get('email')
+        auth_password = data.get('mot_de_passe')
+        montant = data.get('montant')
+        if montant is None or montant <= 0:
+            utilisateurs_ns.abort(400, "Le montant doit être un nombre positif")
+        auteur = auth_user(auth_email, auth_password)
+        if auteur.id != utilisateur.id and not auteur.is_admin:
+            utilisateurs_ns.abort(403, "Accès refusé")
+        try:
+            utilisateur.withdraw(montant)
+        except ValueError as exc:
+            utilisateurs_ns.abort(400, str(exc))
+        db.session.commit()
+        return utilisateur.to_dict(), 200
+
+@utilisateurs_ns.route('/<int:id>/promote')
+class UtilisateurPromote(Resource):
+    @utilisateurs_ns.doc('promote_utilisateur')
+    @utilisateurs_ns.expect(admin_action_model, validate=True)
+    def post(self, id):
+        """Promote un utilisateur en administrateur"""
+        utilisateur = Utilisateur.query.get_or_404(id)
+        data = request.get_json(silent=True)
+        if not data or not isinstance(data, dict):
+            utilisateurs_ns.abort(400, "Le corps de la requête doit être un JSON valide")
+        admin_email = data.get('admin_email')
+        admin_mot_de_passe = data.get('admin_mot_de_passe')
+        require_admin(admin_email, admin_mot_de_passe)
+        utilisateur.is_admin = True
+        db.session.commit()
+        return {'message': 'Utilisateur promu administrateur'}, 200
