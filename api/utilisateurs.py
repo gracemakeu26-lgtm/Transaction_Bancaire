@@ -54,14 +54,15 @@ utilisateur_input_model = utilisateurs_ns.model('UtilisateurInput', {
 })
 
 admin_action_model = utilisateurs_ns.model('AdminAction', {
-    'admin_email': fields.String(required=True, description='Email de l’administrateur'),
-    'admin_mot_de_passe': fields.String(required=True, description='Mot de passe de l’administrateur')
+    'admin_email': fields.String(required=True, description='Email de l\'administrateur'),
+    'admin_mot_de_passe': fields.String(required=True, description='Mot de passe de l\'administrateur')
 })
 
-transaction_model = utilisateurs_ns.model('CompteTransaction', {
-    'email': fields.String(required=True, description='Email du titulaire du compte ou de l’administrateur'),
-    'mot_de_passe': fields.String(required=True, description='Mot de passe du titulaire ou de l’administrateur'),
-    'montant': fields.Float(required=True, description='Montant du dépôt ou retrait')
+# Modèle pour les transactions (dépôt/retrait)
+transaction_model = utilisateurs_ns.model('Transaction', {
+    'email': fields.String(required=True, description='Email de l’utilisateur qui effectue l’opération'),
+    'mot_de_passe': fields.String(required=True, description='Mot de passe'),
+    'montant': fields.Float(required=True, description='Montant de la transaction', min=0.01)
 })
 
 # Fonctions utilitaires

@@ -150,56 +150,6 @@ class UtilisateurItem(Resource):
         db.session.commit()
         return '', 204
 
-@utilisateurs_ns.route('/<int:id>/deposit')
-class UtilisateurDeposit(Resource):
-    @utilisateurs_ns.doc('deposit_utilisateur')
-    @utilisateurs_ns.expect(transaction_model, validate=True)
-    def post(self, id):
-        """Dépose un montant sur le compte d'un utilisateur"""
-        utilisateur = Utilisateur.query.get_or_404(id)
-        data = request.get_json(silent=True)
-        if not data or not isinstance(data, dict):
-            utilisateurs_ns.abort(400, "Le corps de la requête doit être un JSON valide")
-        auth_email = data.get('email')
-        auth_password = data.get('mot_de_passe')
-        montant = data.get('montant')
-        if montant is None or montant <= 0:
-            utilisateurs_ns.abort(400, "Le montant doit être un nombre positif")
-        auteur = auth_user(auth_email, auth_password)
-        if auteur.id != utilisateur.id and not auteur.is_admin:
-            utilisateurs_ns.abort(403, "Accès refusé")
-        try:
-            utilisateur.deposit(montant)
-        except ValueError as exc:
-            utilisateurs_ns.abort(400, str(exc))
-        db.session.commit()
-        return utilisateur.to_dict(), 200
-
-@utilisateurs_ns.route('/<int:id>/withdraw')
-class UtilisateurWithdraw(Resource):
-    @utilisateurs_ns.doc('withdraw_utilisateur')
-    @utilisateurs_ns.expect(transaction_model, validate=True)
-    def post(self, id):
-        """Retire un montant du compte d'un utilisateur"""
-        utilisateur = Utilisateur.query.get_or_404(id)
-        data = request.get_json(silent=True)
-        if not data or not isinstance(data, dict):
-            utilisateurs_ns.abort(400, "Le corps de la requête doit être un JSON valide")
-        auth_email = data.get('email')
-        auth_password = data.get('mot_de_passe')
-        montant = data.get('montant')
-        if montant is None or montant <= 0:
-            utilisateurs_ns.abort(400, "Le montant doit être un nombre positif")
-        auteur = auth_user(auth_email, auth_password)
-        if auteur.id != utilisateur.id and not auteur.is_admin:
-            utilisateurs_ns.abort(403, "Accès refusé")
-        try:
-            utilisateur.withdraw(montant)
-        except ValueError as exc:
-            utilisateurs_ns.abort(400, str(exc))
-        db.session.commit()
-        return utilisateur.to_dict(), 200
-
 @utilisateurs_ns.route('/<int:id>/promote')
 class UtilisateurPromote(Resource):
     @utilisateurs_ns.doc('promote_utilisateur')
@@ -289,3 +239,104 @@ class UtilisateurFaceLogin(Resource):
         if utilisateur:
             return utilisateur.to_dict(), 200
         utilisateurs_ns.abort(401, "Visage non reconnu")
+
+# Namespace pour la gestion des comptes
+comptes_ns = Namespace('comptes', description='Gestion des comptes bancaires')
+
+compte_model = comptes_ns.model('Compte', {
+    'id': fields.Integer(readonly=True, description='Identifiant unique'),
+    'nom': fields.String(required=True, description='Nom de famille'),
+    'prenom': fields.String(required=True, description='Prénom'),
+    'email': fields.String(required=True, description='Adresse email valide'),
+    'telephone': fields.String(required=True, description='Numéro de téléphone'),
+    'date_naissance': fields.Date(required=True, description='Date de naissance (YYYY-MM-DD)'),
+    'adresse': fields.String(required=True, description='Adresse postale complète'),
+    'type_compte': fields.String(required=True, description='Type de compte', enum=['courant', 'epargne', 'joint']),
+    'solde_initial': fields.Float(required=True, description='Solde initial du compte'),
+    'numero_compte': fields.String(readonly=True, description='Numéro de compte généré automatiquement'),
+    'is_admin': fields.Boolean(description='Utilisateur administrateur'),
+    'date_creation': fields.DateTime(readonly=True, description='Date de création du compte'),
+    'statut': fields.String(description='Statut du compte', enum=['actif', 'inactif', 'bloque'], default='actif')
+})
+
+compte_input_model = comptes_ns.model('CompteInput', {
+    'nom': fields.String(required=True, description='Nom de famille'),
+    'prenom': fields.String(required=True, description='Prénom'),
+    'email': fields.String(required=True, description='Adresse email valide'),
+    'mot_de_passe': fields.String(required=True, description='Mot de passe'),
+    'telephone': fields.String(required=True, description='Numéro de téléphone'),
+    'date_naissance': fields.Date(required=True, description='Date de naissance (YYYY-MM-DD)'),
+    'adresse': fields.String(required=True, description='Adresse postale complète'),
+    'type_compte': fields.String(required=True, description='Type de compte', enum=['courant', 'epargne', 'joint']),
+    'solde_initial': fields.Float(required=True, description='Solde initial du compte'),
+    'statut': fields.String(enum=['actif', 'inactif', 'bloque'], default='actif')
+})
+
+@comptes_ns.route('')
+class CompteList(Resource):
+    @comptes_ns.doc('list_comptes')
+    @comptes_ns.marshal_list_with(compte_model)
+    def get(self):
+        """Récupère la liste de tous les comptes"""
+        return Utilisateur.query.all()
+
+    @comptes_ns.doc('create_compte')
+    @comptes_ns.expect(compte_input_model, validate=True)
+    @comptes_ns.marshal_with(compte_model, code=201)
+    def post(self):
+        """Crée un nouveau compte bancaire"""
+        data = request.get_json(silent=True)
+        if not data or not isinstance(data, dict):
+            comptes_ns.abort(400, "Le corps de la requête doit être un JSON valide")
+        if Utilisateur.query.filter_by(email=data.get('email')).first():
+            comptes_ns.abort(409, "Cet email est déjà utilisé")
+        try:
+            date_naissance = datetime.strptime(data['date_naissance'], '%Y-%m-%d').date()
+        except ValueError:
+            comptes_ns.abort(400, "Format de date invalide. Utiliser YYYY-MM-DD")
+        nouvel_utilisateur = Utilisateur(
+            nom=data['nom'],
+            prenom=data['prenom'],
+            email=data['email'],
+            mot_de_passe=data['mot_de_passe'],
+            telephone=data['telephone'],
+            date_naissance=date_naissance,
+            adresse=data['adresse'],
+            type_compte=data['type_compte'],
+            numero_compte=generer_numero_compte(),
+            solde_initial=data['solde_initial'],
+            is_admin=False,
+            statut=data.get('statut', 'actif')
+        )
+        db.session.add(nouvel_utilisateur)
+        db.session.commit()
+        return nouvel_utilisateur, 201
+
+@comptes_ns.route('/<int:id>')
+@comptes_ns.param('id', 'Identifiant du compte')
+@comptes_ns.response(404, 'Compte non trouvé')
+class CompteItem(Resource):
+    @comptes_ns.doc('get_compte')
+    @comptes_ns.marshal_with(compte_model)
+    def get(self, id):
+        """Récupère un compte par son ID"""
+        utilisateur = Utilisateur.query.get_or_404(id)
+        return utilisateur
+
+    @comptes_ns.doc('delete_compte')
+    @comptes_ns.expect(admin_action_model, validate=True)
+    @comptes_ns.response(204, 'Compte supprimé')
+    def delete(self, id):
+        """Supprime un compte par un administrateur"""
+        utilisateur = Utilisateur.query.get_or_404(id)
+        data = request.get_json(silent=True)
+        if not data or not isinstance(data, dict):
+            comptes_ns.abort(400, "Le corps de la requête doit être un JSON valide")
+        admin_email = data.get('admin_email')
+        admin_mot_de_passe = data.get('admin_mot_de_passe')
+        requester = require_admin(admin_email, admin_mot_de_passe)
+        if utilisateur.is_admin:
+            comptes_ns.abort(403, "Impossible de supprimer un autre administrateur")
+        db.session.delete(utilisateur)
+        db.session.commit()
+        return '', 204

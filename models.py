@@ -37,14 +37,34 @@ class Utilisateur(db.Model):
             'statut': self.statut
         }
 
-    def deposit(self, amount: float):
-        if amount <= 0:
-            raise ValueError('Le montant du dépôt doit être positif')
-        self.solde_initial += amount
+    def deposit(self, montant):
+        if montant <= 0:
+            raise ValueError("Le montant doit être positif")
+        self.solde_initial += montant
 
-    def withdraw(self, amount: float):
-        if amount <= 0:
-            raise ValueError('Le montant du retrait doit être positif')
-        if amount > self.solde_initial:
-            raise ValueError('Solde insuffisant')
-        self.solde_initial -= amount
+    def withdraw(self, montant):
+        if montant <= 0:
+            raise ValueError("Le montant doit être positif")
+        if self.solde_initial < montant:
+            raise ValueError("Solde insuffisant")
+        self.solde_initial -= montant
+
+class Compte(db.Model):
+    __tablename__ = 'comptes'
+    id = db.Column(db.Integer, primary_key=True)
+    numero_compte = db.Column(db.String(24), unique=True, nullable=False)
+    type_compte = db.Column(db.String(20), nullable=False)  # 'courant', 'epargne'
+    solde = db.Column(db.Float, default=0.0)
+    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    statut = db.Column(db.String(20), default='actif')
+    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateurs.id'), nullable=False)
+    utilisateur = db.relationship('Utilisateur', backref=db.backref('comptes', lazy=True))
+
+class Transaction(db.Model):
+    __tablename__ = 'transactions'
+    id = db.Column(db.Integer, primary_key=True)
+    type_transaction = db.Column(db.String(20), nullable=False)  # 'depot', 'retrait'
+    montant = db.Column(db.Float, nullable=False)
+    date_transaction = db.Column(db.DateTime, default=datetime.utcnow)
+    compte_id = db.Column(db.Integer, db.ForeignKey('comptes.id'), nullable=False)
+    compte = db.relationship('Compte', backref=db.backref('transactions', lazy=True))
