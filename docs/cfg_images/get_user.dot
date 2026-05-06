@@ -1,0 +1,9 @@
+digraph get_user {
+  node [shape=box];
+  start -> query_by_id;
+  query_by_id -> not_found [label="not found"];
+  query_by_id -> found [label="found"];
+  found -> return_200;
+  not_found [shape=diamond, color=red];
+  return_200 [shape=ellipse];
+}

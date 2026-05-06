@@ -1,0 +1,18 @@
+digraph create_user {
+  node [shape=box];
+  start -> read_json;
+  read_json -> invalid_json [label="not json"];
+  read_json -> validate_email [label="json ok"];
+  validate_email -> invalid_email [label="invalid"];
+  validate_email -> check_exists [label="valid"];
+  check_exists -> email_exists [label="exists"];
+  check_exists -> parse_date [label="not exists"];
+  parse_date -> invalid_date [label="error"];
+  parse_date -> create_user [label="ok"];
+  create_user -> commit -> return_201;
+  invalid_json [shape=diamond, color=red];
+  invalid_email [shape=diamond, color=red];
+  email_exists [shape=diamond, color=red];
+  invalid_date [shape=diamond, color=red];
+  return_201 [shape=ellipse];
+}

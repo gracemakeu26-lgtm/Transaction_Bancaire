@@ -1,0 +1,25 @@
+digraph withdraw_user {
+  node [shape=box];
+  start -> get_user;
+  get_user -> missing_user [label="404"];
+  get_user -> read_body [label="200"];
+  read_body -> invalid_json [label="not json"];
+  read_body -> validate_montant;
+  validate_montant -> invalid_montant [label="<=0 or None"];
+  validate_montant -> auth;
+  auth -> missing_creds [label="missing"];
+  auth -> invalid_creds [label="invalid"];
+  auth -> allowed_check [label="ok"];
+  allowed_check -> forbidden [label="not owner and not admin"];
+  allowed_check -> do_withdraw [label="allowed"];
+  do_withdraw -> insufficient [label="solde insuf"];
+  do_withdraw -> commit -> return_200;
+  missing_user [shape=diamond, color=red];
+  invalid_json [shape=diamond, color=red];
+  invalid_montant [shape=diamond, color=red];
+  missing_creds [shape=diamond, color=red];
+  invalid_creds [shape=diamond, color=red];
+  forbidden [shape=diamond, color=red];
+  insufficient [shape=diamond, color=red];
+  return_200 [shape=ellipse];
+}

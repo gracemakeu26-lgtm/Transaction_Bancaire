@@ -16,18 +16,18 @@ load_dotenv()
 
 def create_app(test_config=None):
     app = Flask(__name__)
-    
+    # Appliquer la configuration de test si fournie (priorité)
+    if test_config:
+        app.config.update(test_config)
 
-    database_url = os.environ.get('DATABASE_URL')
+    database_url = app.config.get('SQLALCHEMY_DATABASE_URI') or os.environ.get('DATABASE_URL')
 
-    if database_url:
+    if database_url and not app.config.get('SQLALCHEMY_DATABASE_URI'):
         # 🔧 Nécessaire pour Neon : remplace "postgres://" par "postgresql://"
         print("Configuration de la base de données à partir de DATABASE_URL")
         if database_url.startswith("postgres://"):
             database_url = database_url.replace("postgres://", "postgresql://", 1)
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    else:
-        pass
         # # Fallback en local (SQLite)
         # print("Aucune DATABASE_URL trouvée, utilisation de SQLite en local")
         # basedir = os.path.abspath(os.path.dirname(__file__))
@@ -36,11 +36,12 @@ def create_app(test_config=None):
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
 
-    # Configuration
+    # Configuration par défaut si non fournie
     basedir = os.path.abspath(os.path.dirname(__file__))
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url if database_url else 'sqlite:///' + os.path.join(basedir, 'database.db')
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SECRET_KEY'] = 'votre-cle-secrete-tres-longue-a-changer-en-production'
+    if not app.config.get('SQLALCHEMY_DATABASE_URI'):
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url if database_url else 'sqlite:///' + os.path.join(basedir, 'database.db')
+    app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', False)
+    app.config.setdefault('SECRET_KEY', 'votre-cle-secrete-tres-longue-a-changer-en-production')
     
     # Initialisation des extensions
     db.init_app(app)
@@ -53,10 +54,17 @@ def create_app(test_config=None):
     api.add_namespace(comptes_ns, path='/api/comptes')
     api.add_namespace(transactions_ns, path='/api/transactions')
     
-    # Création des tables
-    with app.app_context():
-        db.create_all()
-        _ensure_face_column_exists()
+    # Routes racine liées à l'instance app (assure disponibilité pour toutes les instances)
+    @app.route('/')
+    def home():
+        return {"message": "Bienvenue sur l'API de Gestion des Transactions Bancaires", "docs": "/docs"}, 200
+    
+    # Création des tables (ne pas forcer en mode TESTING pour laisser les tests gérer
+    # la création/suppression de la base en mémoire)
+    if not app.config.get('TESTING'):
+        with app.app_context():
+            db.create_all()
+            _ensure_face_column_exists()
     
     return app
 
@@ -74,10 +82,6 @@ def _ensure_face_column_exists():
                 conn.execute(text(sql))
 
 app = create_app()
-
-@app.route('/')
-def home():
-    return {"message": "Bienvenue sur l'API de Gestion des Transactions Bancaires", "docs": "/docs"}, 200
 
 # Routes pour la gestion des comptes bancaires
 @app.route('/comptes', methods=['POST'])

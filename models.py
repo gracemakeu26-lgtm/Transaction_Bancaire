@@ -52,12 +52,12 @@ class Utilisateur(db.Model):
 class Compte(db.Model):
     __tablename__ = 'comptes'
     id = db.Column(db.Integer, primary_key=True)
-    numero_compte = db.Column(db.String(24), unique=True, nullable=False)
-    type_compte = db.Column(db.String(20), nullable=False)  # 'courant', 'epargne'
+    numero_compte = db.Column(db.String(24), unique=True, nullable=True)
+    type_compte = db.Column(db.String(20), nullable=True)  # 'courant', 'epargne'
     solde = db.Column(db.Float, default=0.0)
     date_creation = db.Column(db.DateTime, default=datetime.utcnow)
     statut = db.Column(db.String(20), default='actif')
-    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateurs.id'), nullable=False)
+    utilisateur_id = db.Column(db.Integer, db.ForeignKey('utilisateurs.id'), nullable=True)
     utilisateur = db.relationship('Utilisateur', backref=db.backref('comptes', lazy=True))
 
 class Transaction(db.Model):

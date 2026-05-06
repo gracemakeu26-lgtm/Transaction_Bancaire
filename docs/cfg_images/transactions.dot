@@ -1,0 +1,28 @@
+digraph transactions {
+  node [shape=box];
+  start -> read_json;
+  read_json -> invalid_json [label="not json"];
+  read_json -> require_compte_id [label="json ok"];
+  require_compte_id -> missing_compte_id [label="missing"];
+  require_compte_id -> lookup_compte [label="present"];
+  lookup_compte -> compte_not_found [label="not found"];
+  lookup_compte -> check_statut [label="found"];
+  check_statut -> statut_not_actif [label="not actif"];
+  check_statut -> montant_validation [label="actif"];
+  montant_validation -> invalid_montant [label="invalid"];
+  montant_validation -> type_validation;
+  type_validation -> invalid_type [label="invalid"];
+  type_validation -> retrait_check [label="retrait"];
+  retrait_check -> solde_insuffisant [label="insuffisant"];
+  retrait_check -> apply;
+  type_validation -> apply [label="depot"];
+  apply -> commit -> return_201;
+  invalid_json [shape=diamond, color=red];
+  missing_compte_id [shape=diamond, color=red];
+  compte_not_found [shape=diamond, color=red];
+  statut_not_actif [shape=diamond, color=red];
+  invalid_montant [shape=diamond, color=red];
+  invalid_type [shape=diamond, color=red];
+  solde_insuffisant [shape=diamond, color=red];
+  return_201 [shape=ellipse];
+}
