@@ -46,8 +46,14 @@ def create_app(test_config=None):
     # Initialisation des extensions
     db.init_app(app)
     ma.init_app(app)
+
+    # Routes racine liées à l'instance app (assure disponibilité pour toutes les instances)
+    @app.route('/', endpoint='app_home')
+    def home():
+        return {"message": "Bienvenue sur l'API de Gestion des Transactions Bancaires", "docs": "/docs"}, 200
+
     api.init_app(app)
-    
+
     # Enregistrement des namespaces (endpoints)
     api.add_namespace(utilisateurs_ns, path='/api/utilisateurs')
     api.add_namespace(utilisateurs_rest_ns, path='/api/utilisateurs_rest')
