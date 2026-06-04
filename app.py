@@ -42,7 +42,7 @@ def create_app(test_config=None):
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'votre-cle-secrete-tres-longue-a-changer-en-production')
 
     # Initialisation de la gestion des migrations
-    migrate = Migrate(app, db)
+    Migrate(app, db=db)
 
     # Initialisation des extensions
     db.init_app(app)
