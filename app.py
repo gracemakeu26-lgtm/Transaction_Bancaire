@@ -8,6 +8,12 @@ from models import Utilisateur
 from dotenv import load_dotenv
 from api.comptes import comptes_ns
 from api.transactions import transactions_ns
+from api.virements import virements_ns
+from api.notifications import notifications_ns
+from api.beneficiaires import beneficiaires_ns
+from api.cartes import cartes_ns
+from api.audit import audit_ns, limites_ns
+from api.rapports import rapports_ns
 from datetime import datetime
 import os
 
@@ -59,6 +65,13 @@ def create_app(test_config=None):
     api.add_namespace(utilisateurs_rest_ns, path='/api/utilisateurs_rest')
     api.add_namespace(comptes_ns, path='/api/comptes')
     api.add_namespace(transactions_ns, path='/api/transactions')
+    api.add_namespace(virements_ns, path='/api/virements')
+    api.add_namespace(notifications_ns, path='/api/notifications')
+    api.add_namespace(beneficiaires_ns, path='/api/beneficiaires')
+    api.add_namespace(cartes_ns, path='/api/cartes')
+    api.add_namespace(audit_ns, path='/api/audit')
+    api.add_namespace(limites_ns, path='/api/limites')
+    api.add_namespace(rapports_ns, path='/api/rapports')
     
     # Routes racine liées à l'instance app (assure disponibilité pour toutes les instances)
     @app.route('/')
