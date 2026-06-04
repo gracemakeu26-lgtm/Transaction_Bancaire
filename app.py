@@ -15,6 +15,7 @@ from api.cartes import cartes_ns
 from api.audit import audit_ns, limites_ns
 from api.rapports import rapports_ns
 from datetime import datetime
+from flask_migrate import Migrate
 import os
 
 
@@ -49,6 +50,9 @@ def create_app(test_config=None):
     app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', False)
     app.config.setdefault('SECRET_KEY', 'votre-cle-secrete-tres-longue-a-changer-en-production')
     
+    # Initialisation de la gestion des migrations
+    migrate = Migrate(app, db)
+
     # Initialisation des extensions
     db.init_app(app)
     ma.init_app(app)
