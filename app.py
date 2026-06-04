@@ -30,26 +30,17 @@ def create_app(test_config=None):
     database_url = app.config.get('SQLALCHEMY_DATABASE_URI') or os.environ.get('DATABASE_URL')
 
     if database_url and not app.config.get('SQLALCHEMY_DATABASE_URI'):
-        # 🔧 Nécessaire pour Neon : remplace "postgres://" par "postgresql://"
         print("Configuration de la base de données à partir de DATABASE_URL")
-        if database_url.startswith("postgres://"):
-            database_url = database_url.replace("postgres://", "postgresql://", 1)
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-        # # Fallback en local (SQLite)
-        # print("Aucune DATABASE_URL trouvée, utilisation de SQLite en local")
-        # basedir = os.path.abspath(os.path.dirname(__file__))
-        # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database.db')
     
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
-
     # Configuration par défaut si non fournie
     basedir = os.path.abspath(os.path.dirname(__file__))
     if not app.config.get('SQLALCHEMY_DATABASE_URI'):
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url if database_url else 'sqlite:///' + os.path.join(basedir, 'database.db')
-    app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', False)
-    app.config.setdefault('SECRET_KEY', 'votre-cle-secrete-tres-longue-a-changer-en-production')
-    
+ 
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'votre-cle-secrete-tres-longue-a-changer-en-production')
+
     # Initialisation de la gestion des migrations
     migrate = Migrate(app, db)
 
@@ -83,26 +74,11 @@ def create_app(test_config=None):
         return {"message": "Bienvenue sur l'API de Gestion des Transactions Bancaires", "docs": "/docs"}, 200
     
     # Création des tables (ne pas forcer en mode TESTING pour laisser les tests gérer
-    # la création/suppression de la base en mémoire)
     if not app.config.get('TESTING'):
         with app.app_context():
             db.create_all()
-            _ensure_face_column_exists()
     
     return app
-
-def _ensure_face_column_exists():
-    inspector = inspect(db.engine)
-    if 'utilisateurs' in inspector.get_table_names():
-        columns = {col['name'] for col in inspector.get_columns('utilisateurs')}
-        missing_columns = []
-        if 'empreinte_faciale' not in columns:
-            missing_columns.append("ALTER TABLE utilisateurs ADD COLUMN empreinte_faciale TEXT")
-        if 'is_admin' not in columns:
-            missing_columns.append("ALTER TABLE utilisateurs ADD COLUMN is_admin BOOLEAN DEFAULT FALSE")
-        for sql in missing_columns:
-            with db.engine.begin() as conn:
-                conn.execute(text(sql))
 
 app = create_app()
 
