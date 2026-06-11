@@ -2,33 +2,33 @@
 
 Une API bancaire entièrement fonctionnelle et sécurisée construite avec Flask, SQLAlchemy et Flask-RESTX.
 
-## 🎯 Fonctionnalités Principales
+## Fonctionnalités Principales
 
 ### Gestion de Compte
-- ✅ Création de comptes bancaires
-- ✅ Gestion des utilisateurs
-- ✅ Authentification (Email/Mot de passe + Reconnaissance faciale)
-- ✅ Rôles administrateur
+- Création de comptes bancaires
+- Gestion des utilisateurs
+- Authentification (Email/Mot de passe + Reconnaissance faciale)
+- Rôles administrateur
 
 ### Opérations Bancaires
-- ✅ Dépôts et retraits
-- ✅ Virements entre comptes
-- ✅ Historique des transactions
-- ✅ Bénéficiaires
+- Dépôts et retraits
+- Virements entre comptes
+- Historique des transactions
+- Bénéficiaires
 
 ### Sécurité & Conformité
-- ✅ Hash des mots de passe (bcrypt)
-- ✅ Limites de transactions (quotidiennes/mensuelles)
-- ✅ Journalisation d'audit complète
-- ✅ Validation des données stricte
+- Hash des mots de passe (bcrypt)
+- Limites de transactions (quotidiennes/mensuelles)
+- Journalisation d'audit complète
+- Validation des données stricte
 
 ### Outils Avancés
-- ✅ Gestion des cartes bancaires
-- ✅ Système de notifications
-- ✅ Rapports et statistiques
-- ✅ Export de données (CSV)
+- Gestion des cartes bancaires
+- Système de notifications
+- Rapports et statistiques
+- Export de données (CSV)
 
-## 🚀 Installation
+## Installation
 
 ### Prérequis
 - Python 3.8+
@@ -54,7 +54,7 @@ cp .env.example .env
 # Éditer .env avec votre configuration
 ```
 
-## 🏃 Démarrage
+## Démarrage
 
 ```bash
 # Mode développement
@@ -67,7 +67,7 @@ gunicorn app:app
 # Documentation Swagger: http://localhost:5000/docs
 ```
 
-## 📝 Configuration
+## Configuration
 
 Créez un fichier `.env`:
 
@@ -81,7 +81,7 @@ PORT=5000
 FLASK_ENV=development
 ```
 
-## 🧪 Tests
+## Tests
 
 ```bash
 # Exécuter tous les tests
@@ -94,7 +94,7 @@ python -m pytest tests/ --cov=. --cov-report=html
 python -m pytest tests/test_new_features.py -v
 ```
 
-## 📚 API Endpoints
+## API Endpoints
 
 ### Utilisateurs
 - `POST /api/utilisateurs_rest` - Créer un utilisateur
@@ -153,7 +153,7 @@ python -m pytest tests/test_new_features.py -v
 - `GET /api/rapports/export/transactions/<compte_id>` - Export transactions
 - `GET /api/rapports/solde-quotidien/<compte_id>` - Soldes quotidiens
 
-## 📖 Exemples d'utilisation
+## Exemples d'utilisation
 
 ### Créer un utilisateur
 ```bash
@@ -199,7 +199,7 @@ curl -X POST http://localhost:5000/api/cartes \
   }'
 ```
 
-## 🔒 Sécurité
+## Sécurité
 
 ### Bonnes pratiques implémentées
 1. **Hashing des mots de passe** - Bcrypt avec 12 rounds
@@ -218,7 +218,7 @@ curl -X POST http://localhost:5000/api/cartes \
 6. **Sanitization** - Protéger contre les injections SQL
 7. **Encryption** - Chiffrer les données sensibles
 
-## 📊 Architecture
+## Architecture
 
 ```
 bank-api/
@@ -251,7 +251,7 @@ bank-api/
 └── ressources.py          # REST resources
 ```
 
-## 🗄️ Modèle de données
+## Modèle de données
 
 ### Tables principales
 - **utilisateurs** - Utilisateurs bancaires
@@ -264,13 +264,13 @@ bank-api/
 - **limites_transactions** - Limites quotidiennes/mensuelles
 - **audit_logs** - Journalisation d'audit
 
-## 📈 Statistiques de couverture de test
+##  Statistiques de couverture de test
 
 - **Total des tests** : 50
-- **Tests passés** : 50 ✅
+- **Tests passés** : 50 
 - **Couverture** : ~85%
 
-## 🔄 Workflow CI/CD
+## Workflow CI/CD
 
 ```bash
 # Lint
@@ -286,7 +286,7 @@ python setup.py sdist bdist_wheel
 # Configuration selon votre plateforme
 ```
 
-## 🐛 Debugging
+## Debugging
 
 ### Logs
 ```python
@@ -303,7 +303,7 @@ sqlite3 database.db
 psql -U user -d dbname
 ```
 
-## 📞 Support & Contribution
+## Support & Contribution
 
 Pour toute question ou amélioration :
 1. Consulter la documentation Swagger : `/docs`
@@ -311,16 +311,16 @@ Pour toute question ou amélioration :
 3. Vérifier les tests existants
 4. Ouvrir une issue sur GitHub
 
-## 📄 Licence
+## Licence
 
 MIT License
 
-## 👨‍💻 Auteur
+## Auteur
 
 Système de Gestion Bancaire Complet
 Implémentation avec Flask & SQLAlchemy
 
-## 🎉 Remerciements
+## Remerciements
 
 - Flask & communauté
 - SQLAlchemy
